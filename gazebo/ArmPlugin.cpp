@@ -236,9 +236,9 @@ namespace gazebo
             
             // Check if there is collision between the arm and object, then issue learning reward
             // If grip colides with tube
-            // if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0) &&
-            //    (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))
-            if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0))
+            if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0) &&
+               (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))
+            // if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0))
             {
                 rewardHistory = REWARD_WIN;
                 newReward  = true;
@@ -542,7 +542,7 @@ namespace gazebo
             
             // get the bounding box for the gripper
             const math::Box& gripBBox = gripper->GetBoundingBox();
-            const float groundContact = 0.00f;
+            const float groundContact = 0.05f;
             
             if( gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact )
             {

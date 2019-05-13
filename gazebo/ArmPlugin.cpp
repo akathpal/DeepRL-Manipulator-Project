@@ -40,8 +40,8 @@
 #define LSTM_SIZE 256
 
 // Define Reward Parameters
-#define REWARD_WIN   500.0f
-#define REWARD_LOSS -500.0f
+#define REWARD_WIN   1000.0f
+#define REWARD_LOSS -1000.0f
 #define REWARD_MULTIPLIER 10.0f
 
 // Define Object Names
@@ -542,7 +542,7 @@ namespace gazebo
             
             // get the bounding box for the gripper
             const math::Box& gripBBox = gripper->GetBoundingBox();
-            const float groundContact = 0.05f;
+            const float groundContact = 0.00f;
             
             if( gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact )
             {

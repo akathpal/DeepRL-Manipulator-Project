@@ -33,7 +33,7 @@
 #define INPUT_WIDTH   64
 #define INPUT_HEIGHT  64
 #define OPTIMIZER "RMSprop"
-#define LEARNING_RATE 0.2f
+#define LEARNING_RATE 0.02f
 #define REPLAY_MEMORY 10000
 #define BATCH_SIZE 32
 #define USE_LSTM true
@@ -239,8 +239,8 @@ namespace gazebo
                                                         << contacts->contact(i).collision2() << "]\n";}
 
             // TODO - Check if there is collision between the arm and object, then issue learning reward
-            if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM  ) == 0))
-                // && (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))  // add this to the "if" statment for Task 2 only
+            if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM  ) == 0)
+                 && (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))  // add this to the "if" statment for Task 2 only
             {
                 // collision reward
                 rewardHistory = REWARD_WIN;
@@ -249,7 +249,7 @@ namespace gazebo
             }
             else
             {
-                // no collision with required target penalty
+                // Penalty for wrong collision
                 rewardHistory = REWARD_LOSS * 0.1f;
                 newReward  = true;
                 endEpisode = false;

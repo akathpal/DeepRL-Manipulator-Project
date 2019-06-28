@@ -33,16 +33,17 @@
 #define INPUT_WIDTH   64
 #define INPUT_HEIGHT  64
 #define OPTIMIZER "RMSprop"
-#define LEARNING_RATE 0.1f
+#define LEARNING_RATE 0.2f
 #define REPLAY_MEMORY 10000
 #define BATCH_SIZE 32
 #define USE_LSTM true
 #define LSTM_SIZE 256
 
 // Define Reward Parameters
-#define REWARD_WIN   1000.0f
-#define REWARD_LOSS -1000.0f
-#define REWARD_MULTIPLIER 10.0f
+#define REWARD_WIN   100.0f
+#define REWARD_LOSS -100.0f
+#define REWARD_MULTIPLIER 50.0f
+#define alpha 0.8f
 
 // Define Object Names
 #define WORLD_NAME "arm_world"
@@ -79,7 +80,7 @@ namespace gazebo
         for( uint32_t n=0; n < DOF; n++ )
             resetPos[n] = 0.0f;
         
-        resetPos[1] = 0.25;
+        resetPos[1] = 1.0f;
         
         for( uint32_t n=0; n < DOF; n++ )
         {
@@ -223,35 +224,37 @@ namespace gazebo
     // onCollisionMsg
     void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
     {
+        if(DEBUG){printf("[DEBUG] collision callback (%u contacts)\n", contacts->contact_size());}
+
         if( testAnimation )
             return;
-        
+
         for (unsigned int i = 0; i < contacts->contact_size(); ++i)
         {
+            // exit if collision is with ground
             if( strcmp(contacts->contact(i).collision2().c_str(), COLLISION_FILTER) == 0 )
                 continue;
-            
-            std::cout << "Collision between[" << contacts->contact(i).collision1()
-            << "] and [" << contacts->contact(i).collision2() << "]\n";
-            
-            // Check if there is collision between the arm and object, then issue learning reward
-            // If grip colides with tube
-            if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0) &&
-               (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))
-            // if((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM) == 0))
+
+            if(DEBUG){std::cout << "Collision between[" << contacts->contact(i).collision1() << "] and ["
+                                                        << contacts->contact(i).collision2() << "]\n";}
+
+            // TODO - Check if there is collision between the arm and object, then issue learning reward
+            if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM  ) == 0))
+                // && (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT) == 0))  // add this to the "if" statment for Task 2 only
             {
+                // collision reward
                 rewardHistory = REWARD_WIN;
                 newReward  = true;
                 endEpisode = true;
-                
-                return;    // multiple collisions in the for loop above could mess with win count
             }
-            else {
-                // Give penalty for non correct collisions
-                rewardHistory = REWARD_LOSS;
+            else
+            {
+                // no collision with required target penalty
+                rewardHistory = REWARD_LOSS * 0.1f;
                 newReward  = true;
-                endEpisode = true;
+                endEpisode = false;
             }
+            return;
         }
     }
     
@@ -542,7 +545,7 @@ namespace gazebo
             
             // get the bounding box for the gripper
             const math::Box& gripBBox = gripper->GetBoundingBox();
-            const float groundContact = 0.00f;
+            const float groundContact = 0.05f;
             
             if( gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact )
             {
@@ -553,26 +556,20 @@ namespace gazebo
                 newReward     = true;
                 endEpisode    = true;
             }
+            
             else
             {
-                // Issue an interim reward based on the distance to the object
-                const float distGoal = BoxDistance(gripBBox, propBBox); // compute the reward from distance to the goal
-                
-                if(DEBUG){printf("distance('%s', '%s') = %f\n", gripper->GetName().c_str(), prop->model->GetName().c_str(), distGoal);}
-                
-                // issue an interim reward based on the delta of the distance to the object
+                // calculate the distance between two bounding boxes
+                const float distGoal = BoxDistance(gripBBox, propBBox);
+
                 if( episodeFrames > 1 )
                 {
-                    const float distDelta  = lastGoalDistance - distGoal;
-                    const float movingAvg  = 0.9f;
-                    const float timePenalty  =  0.50f;
-                    
-                    // compute the smoothed moving average of the delta of the distance to the goal
-                    avgGoalDelta  = (avgGoalDelta * movingAvg) + (distDelta * (1.0f - movingAvg));
-                    rewardHistory = avgGoalDelta * REWARD_MULTIPLIER - timePenalty;
-                    newReward     = true;
+                    const float distDelta   = lastGoalDistance - distGoal;
+                    avgGoalDelta            = (avgGoalDelta * alpha) + (distDelta * (1.0 - alpha));
+                    rewardHistory           = (avgGoalDelta) * REWARD_MULTIPLIER;
+                    newReward           = true; 
                 }
-                
+
                 lastGoalDistance = distGoal;
             }
         }

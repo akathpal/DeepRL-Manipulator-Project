@@ -111,7 +111,7 @@ control is quite simpler. I also tried varying the rewards to get better results
 
 ### >80% accuracy for Robotic Arm Gripper touching the object
 
-<p align="center"> <img src="./Images/phase2_out.png"> </p>
+<p align="center"> <img src="./Images/phase2_output.png"> </p>
 
 ## Problems
 I have faced one error as I was running on my local system.
